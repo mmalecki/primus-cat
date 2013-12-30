@@ -11,7 +11,7 @@ var primus = new Primus(server);
 
 primus.on('connection', function (spark) {
   var id = setInterval(function () {
-    spark.write({ data: Math.random() * 100 });
+    spark.write({ data: Math.floor(Math.random() * 100) });
   }, 500);
 
   spark.on('close', function () {
