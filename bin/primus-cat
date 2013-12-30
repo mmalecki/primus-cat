@@ -9,7 +9,6 @@ var argv = require('optimist')
   .argv;
 
 var host = argv._[0];
-var parsed = url.parse(host);
 var transformer = argv.transformer;
 var parser = argv.parser;
 var path = argv.path || '/primus';
@@ -27,6 +26,8 @@ if (!host) {
   console.error('Host is required');
   process.exit(1);
 }
+
+var parsed = url.parse(host);
 
 if (!transformer || !parser) {
   console.error('No transformer or parser given, fetching socket specs');
