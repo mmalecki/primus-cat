@@ -1,0 +1,52 @@
+#!/usr/bin/env node
+var url = require('url');
+var es = require('event-stream');
+var primus = require('primus');
+var jsonquest = require('jsonquest');
+var argv = require('optimist')
+  .alias('transformer', 't')
+  .alias('parser', 'p')
+  .argv;
+
+var host = argv._[0];
+var parsed = url.parse(host);
+var transformer = argv.transformer;
+var parser = argv.parser;
+var path = argv.path || '/primus';
+
+function connect() {
+  console.error('Connecting to %s, using %s transformer and %s parser', host, transformer, parser);
+  var Socket = primus.createSocket({ transformer: transformer, parser: parser });
+  var client = new Socket(host);
+  client
+    .pipe(es.stringify())
+    .pipe(process.stdout);
+}
+
+if (!host) {
+  console.error('Host is required');
+  process.exit(1);
+}
+
+if (!transformer || !parser) {
+  console.error('No transformer or parser given, fetching socket specs');
+  jsonquest({
+    host: parsed.hostname,
+    port: parsed.port,
+    protocol: {'http:': 'http', 'https:': 'http'}[parsed.protocol] || 'http',
+    // Colon issue in joyent/node, anyone?
+    path: path + '/spec'
+  }, function (err, res, body) {
+    if (err) {
+      console.error('Error occured while fetching socket specs: ' + err.message);
+      process.exit(2);
+    }
+
+    parser = body.parser;
+    transformer = body.transformer;
+    connect();
+  });
+}
+else {
+  connect();
+}
